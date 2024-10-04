@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class Car(BaseModel):
+class Cart(BaseModel):
     latitude: float
     longitude: float
     status: int

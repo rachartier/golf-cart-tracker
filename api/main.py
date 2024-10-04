@@ -1,11 +1,12 @@
 # pyright: basic
 
 
-from database import TimeSeriesDB
 from fastapi import FastAPI, WebSocketDisconnect
 from fastapi.websockets import WebSocket
-from model.car import Car
 from tinyflux import Point, TagQuery
+
+from database import TimeSeriesDB
+from model.cart import Cart
 
 
 class WebsocketClientManager:
@@ -28,31 +29,31 @@ app = FastAPI()
 ts_database = TimeSeriesDB("../database.db")
 
 
-@app.put("/cars/{car_id}", response_model=Car)
-async def update_car(car_id: str, car: Car):
-    ts_database.insert(car_id, car)
+@app.put("/carts/{cart_id}", response_model=Cart)
+async def update_cart(cart_id: str, cart: Cart):
+    ts_database.insert(cart_id, cart)
 
-    return car
-
-
-@app.get("/car/{car_id}", response_model=list[Car])
-def read_car(car_id: str, count: int = 10):
-    return ts_database.get_car(car_id, count)
+    return cart
 
 
-@app.get("/cars/today", response_model=dict[str, list[Car]])
-def read_car_today(count: int = 10):
-    return ts_database.get_cars_today(count)
+@app.get("/cart/{cart_id}", response_model=list[Cart])
+def read_cart(cart_id: str, count: int = 10):
+    return ts_database.get_cart(cart_id, count)
 
 
-@app.delete("/cars/{car_id}")
-def delete_car(car_id: str):
+@app.get("/carts/today", response_model=dict[str, list[Cart]])
+def read_cart_today(count: int = 10):
+    return ts_database.get_carts_today(count)
+
+
+@app.delete("/carts/{cart_id}")
+def delete_cart(cart_id: str):
     Tag = TagQuery()
-    query = Tag.id == car_id
+    query = Tag.id == cart_id
 
     deleted_points = ts_database.remove(query)
     return {
-        "message": "Car deleted",
+        "message": "cart deleted",
         "deleted_points": deleted_points,
     }
 
@@ -67,17 +68,17 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_json()
 
-            car = Car(**data)
+            cart = Cart(**data)
             point = Point(
                 tags={
                     "id": data["id"],
                 },
                 fields={
-                    "latitude": car.latitude,
-                    "longitude": car.longitude,
-                    "status": car.status,
-                    "battery": car.battery,
-                    "at_home": car.at_home,
+                    "latitude": cart.latitude,
+                    "longitude": cart.longitude,
+                    "status": cart.status,
+                    "battery": cart.battery,
+                    "at_home": cart.at_home,
                 },
             )
             ts_database.insert(point)
