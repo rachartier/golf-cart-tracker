@@ -1,11 +1,11 @@
 # pyright: basic
 
-from datetime import datetime, timezone
 
+from database import TimeSeriesDB
 from fastapi import FastAPI, WebSocketDisconnect
 from fastapi.websockets import WebSocket
-from pydantic import BaseModel
-from tinyflux import Point, TagQuery, TimeQuery, TinyFlux
+from model.car import Car
+from tinyflux import Point, TagQuery
 
 
 class WebsocketClientManager:
@@ -24,81 +24,37 @@ class WebsocketClientManager:
             await connection.send_json(message)
 
 
-class CarInfo(BaseModel):
-    latitude: float
-    longitude: float
-    status: int
-    battery: int
-
-
 app = FastAPI()
-db = TinyFlux("cars.db")
+ts_database = TimeSeriesDB("../database.db")
 
 
-def get_car_from_db(car_id: str, count: int = 10) -> list[CarInfo]:
-    Tag = TagQuery()
-    query = Tag.id == car_id
+@app.put("/cars/{car_id}", response_model=Car)
+async def update_car(car_id: str, car: Car):
+    ts_database.insert(car_id, car)
 
-    results = db.search(query)[-count:]
-    print(len(results))
-
-    # convert results to json
-    results_list = [CarInfo(**result.fields) for result in results]
-
-    return results_list
-
-
-def get_car_from_today(count_by_car: int) -> dict[str, list[CarInfo]]:
-    Tag = TagQuery()
-
-    results = db.search(
-        TimeQuery()
-        > datetime.now()
-        .replace(minute=0, second=0, microsecond=0)
-        .astimezone(timezone.utc),
-        sorted=True,
-    )
-
-    grouped_results = {}
-    wanted_results = results
-
-    wanted_results = sorted(wanted_results, key=lambda x: x.time, reverse=True)
-    for result in wanted_results:
-        if result.tags["id"] not in grouped_results:
-            grouped_results[result.tags["id"]] = []
-
-        if len(grouped_results[result.tags["id"]]) < count_by_car:
-            grouped_results[result.tags["id"]].append(CarInfo(**result.fields))
-
-    return grouped_results
-
-
-@app.put("/cars/{car_id}", response_model=CarInfo)
-async def update_car(car_id: str, car: CarInfo):
-    point = Point(
-        tags={
-            "id": car_id,
-        },
-        fields={
-            "latitude": car.latitude,
-            "longitude": car.longitude,
-            "status": car.status,
-            "battery": car.battery,
-        },
-    )
-
-    db.insert(point)
     return car
 
 
-@app.get("/car/{car_id}", response_model=list[CarInfo])
+@app.get("/car/{car_id}", response_model=list[Car])
 def read_car(car_id: str, count: int = 10):
-    return get_car_from_db(car_id, count)
+    return ts_database.get_car(car_id, count)
 
 
-@app.get("/cars/today", response_model=dict[str, list[CarInfo]])
+@app.get("/cars/today", response_model=dict[str, list[Car]])
 def read_car_today(count: int = 10):
-    return get_car_from_today(count)
+    return ts_database.get_cars_today(count)
+
+
+@app.delete("/cars/{car_id}")
+def delete_car(car_id: str):
+    Tag = TagQuery()
+    query = Tag.id == car_id
+
+    deleted_points = ts_database.remove(query)
+    return {
+        "message": "Car deleted",
+        "deleted_points": deleted_points,
+    }
 
 
 websocket_manager = WebsocketClientManager()
@@ -111,7 +67,7 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_json()
 
-            car = CarInfo(**data)
+            car = Car(**data)
             point = Point(
                 tags={
                     "id": data["id"],
@@ -121,9 +77,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     "longitude": car.longitude,
                     "status": car.status,
                     "battery": car.battery,
+                    "at_home": car.at_home,
                 },
             )
-            db.insert(point)
+            ts_database.insert(point)
 
             await websocket_manager.broadcast(data)
     except WebSocketDisconnect:

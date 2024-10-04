@@ -23,6 +23,7 @@ def send_data(car_id):
             "longitude": f"{d_lon}",
             "battery": 80,
             "status": 1,
+            "at_home": 0,
         }
 
         print("Sending data: ", data)
