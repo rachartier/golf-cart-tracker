@@ -74,7 +74,7 @@ def forge_api_url():
 
 def main():
     # Fetch car data from the server
-    response = requests.get(f"{forge_api_url()}/cars/today?count_by_car=100")
+    response = requests.get(f"{forge_api_url()}/carts/today?count_by_car=100")
     all_cars_data = json.loads(response.text)
 
     # Initialize the map
@@ -235,7 +235,7 @@ At home: {car_info['at_home']}
     )
 
     # Refresh the Streamlit app
-    time.sleep(5)
+    time.sleep(1)
     st.rerun()
 
 
