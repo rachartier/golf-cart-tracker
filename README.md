@@ -103,6 +103,21 @@ Retrieve today's data for all golf carts.
 }
 ```
 
+### Delete Cart Information
+
+**DELETE** `/cars/{car_id}`
+
+Delete all records of a specific golf cart.
+
+#### Response
+
+```json
+{
+  "message": "Car deleted",
+  "deleted_points": 10
+}
+```
+
 ### Real-Time Updates
 
 **WebSocket** `/ws`
@@ -117,7 +132,7 @@ Receive real-time updates of golf cart data.
   "latitude": 12.34,
   "longitude": 56.78,
   "status": 1,
-  "battery": 80
+  "battery": 80,
   "at_home": false
 }
 ```
