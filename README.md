@@ -1,19 +1,19 @@
-# Golf Cart Tracker API
+# Golf cart Tracker API
 
 This API allows you to track golf carts in real-time. It provides endpoints to update the location and status of golf carts, retrieve their historical data, and receive real-time updates via WebSocket.
 
 ## Features
 
-- **Update Cart Information**: Update the location, status, and battery level of a golf cart.
-- **Retrieve Cart Information**: Retrieve historical data of a golf cart.
+- **Update cart Information**: Update the location, status, and battery level of a golf cart.
+- **Retrieve cart Information**: Retrieve historical data of a golf cart.
 - **Retrieve Today's Data**: Retrieve today's data for all golf carts.
 - **Real-Time Updates**: Receive real-time updates via WebSocket.
 
 ## Endpoints
 
-### Update Cart Information
+### Update cart Information
 
-**PUT** `/cars/{car_id}`
+**PUT** `/carts/{cart_id}`
 
 Update the location, status, and battery level of a golf cart.
 
@@ -41,9 +41,9 @@ Update the location, status, and battery level of a golf cart.
 }
 ```
 
-### Retrieve Cart Information
+### Retrieve cart Information
 
-**GET** `/car/{car_id}`
+**GET** `/cart/{cart_id}`
 
 Retrieve historical data of a golf cart.
 
@@ -68,7 +68,7 @@ Retrieve historical data of a golf cart.
 
 ### Retrieve Today's Data
 
-**GET** `/cars/today`
+**GET** `/carts/today`
 
 Retrieve today's data for all golf carts.
 
@@ -80,7 +80,7 @@ Retrieve today's data for all golf carts.
 
 ```json
 {
-  "car_id_1": [
+  "cart_id_1": [
     {
       "latitude": 12.34,
       "longitude": 56.78,
@@ -90,7 +90,7 @@ Retrieve today's data for all golf carts.
     },
     ...
   ],
-  "car_id_2": [
+  "cart_id_2": [
     {
       "latitude": 23.45,
       "longitude": 67.89,
@@ -103,9 +103,9 @@ Retrieve today's data for all golf carts.
 }
 ```
 
-### Delete Cart Information
+### Delete cart Information
 
-**DELETE** `/cars/{car_id}`
+**DELETE** `/carts/{cart_id}`
 
 Delete all records of a specific golf cart.
 
@@ -113,7 +113,7 @@ Delete all records of a specific golf cart.
 
 ```json
 {
-  "message": "Car deleted",
+  "message": "cart deleted",
   "deleted_points": 10
 }
 ```
@@ -128,7 +128,7 @@ Receive real-time updates of golf cart data.
 
 ```json
 {
-  "id": "car_id",
+  "id": "cart_id",
   "latitude": 12.34,
   "longitude": 56.78,
   "status": 1,
