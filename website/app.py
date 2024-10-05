@@ -241,8 +241,11 @@ def main():
     with st.sidebar:
         st.title("Carts tracking")
 
-        st.session_state["slider_trails_length"] = st.slider("Carts trails length", 10, 500, 100, 10)
+        with st.expander("Settings", expanded=True):
+            st.session_state["slider_trails_length"] = st.slider("Carts trails length", 10, 500, 100, 10)
+            st.session_state["app_refresh_secs"] = st.slider("App refresh time", 1, 60, 5, 1)
 
+        st.subheader("Carts")
         for cart_id, color in carts_color_map.items():
             cart_info = st.session_state["carts_data"][cart_id]
             battery_col, exp = st.columns([0.1, 0.9])
@@ -257,7 +260,7 @@ def main():
                         unsafe_allow_html=True,
                     )
                 else:
-                    if battery < 20:
+                    if battery < 10:
                         st.markdown(
                             '<div class="low-battery-circle"></div>',
                             unsafe_allow_html=True,
@@ -337,8 +340,7 @@ def main():
         height=2500,
     )
 
-    # Refresh the Streamlit app
-    time.sleep(5)
+    time.sleep(st.session_state["app_refresh_secs"])
     st.rerun()
 
 
