@@ -1,0 +1,33 @@
+services:
+  app:
+    build:
+      context: ./website
+    container_name: golf-cart-tracker-app
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    environment:
+      - API_URL=http://api
+      - API_PORT=8000
+    volumes:
+      - ./website:/app
+    networks:
+      - golf-network
+
+  api:
+    build:
+      context: ./api
+    container_name: golf-cart-tracker-api
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+    networks:
+      - golf-network
+
+networks:
+  golf-network:
+    driver: bridge
