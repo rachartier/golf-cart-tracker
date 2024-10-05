@@ -13,24 +13,34 @@ d_lon = 3.0314909254483497
 
 def send_data(car_id):
     global d_lat, d_lon
+    battery = random.uniform(0, 50)
+
     while True:
-        d_lat += random.uniform(-0.0003, 0.0003)
-        d_lon += random.uniform(-0.0003, 0.0003)
+        d_lat += random.uniform(-0.00003, 0.00003)
+        d_lon += random.uniform(-0.00003, 0.00003)
+        battery -= random.uniform(0, 1)
+        if battery < 0:
+            battery = 100
+        online = random.random() < 0.95
+        at_home = random.random() > 0.95
 
         data = {
             "id": car_id,
             "latitude": f"{d_lat}",
             "longitude": f"{d_lon}",
-            "battery": 80,
-            "status": 1,
-            "at_home": 0,
+            "battery": battery,
+            "status": online,
+            "at_home": at_home,
         }
 
         print("Sending data: ", data)
 
-        requests.put(f"http://localhost:8000/cars/{car_id}", json=data)
+        requests.put(f"http://localhost:8000/carts/{car_id}", json=data)
 
-        time.sleep(random.randint(1, 5))
+        if not online:
+            time.sleep(10)
+
+        time.sleep(2)
 
 
 # Nombre de threads que vous souhaitez créer
