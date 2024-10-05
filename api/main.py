@@ -1,12 +1,15 @@
 # pyright: basic
 
 
-from fastapi import FastAPI, WebSocketDisconnect
-from fastapi.websockets import WebSocket
-from tinyflux import Point, TagQuery
+import asyncio
 
 from database import TimeSeriesDB
+from fastapi import FastAPI, WebSocketDisconnect
+from fastapi.websockets import WebSocket
 from model.cart import Cart
+from tinyflux import TagQuery
+
+lock = asyncio.Lock()
 
 
 class WebsocketClientManager:
@@ -26,35 +29,48 @@ class WebsocketClientManager:
 
 
 app = FastAPI()
-ts_database = TimeSeriesDB("../database.db")
+ts_database = TimeSeriesDB("./database.db")
 
 
 @app.put("/carts/{cart_id}", response_model=Cart)
 async def update_cart(cart_id: str, cart: Cart):
-    ts_database.insert(cart_id, cart)
+    async with lock:
+        ts_database.insert(cart_id, cart)
 
     return cart
 
 
 @app.get("/cart/{cart_id}", response_model=list[Cart])
-def read_cart(cart_id: str, count: int = 10):
+async def read_cart(cart_id: str, count: int = 10):
     return ts_database.get_cart(cart_id, count)
 
 
 @app.get("/carts/today", response_model=dict[str, list[Cart]])
-def read_cart_today(count: int = 10):
-    return ts_database.get_carts_today(count)
+async def read_cart_today(count_by_car: int = 10):
+    return ts_database.get_carts_today(count_by_car)
 
 
 @app.delete("/carts/{cart_id}")
-def delete_cart(cart_id: str):
+async def delete_cart(cart_id: str):
     Tag = TagQuery()
     query = Tag.id == cart_id
 
-    deleted_points = ts_database.remove(query)
+    async with lock:
+        deleted_points = ts_database.remove(query)
+
     return {
         "message": "cart deleted",
         "deleted_points": deleted_points,
+    }
+
+
+@app.delete("/carts")
+async def delete_all_carts():
+    async with lock:
+        ts_database.remove_all()
+
+    return {
+        "message": "all carts deleted",
     }
 
 
@@ -69,19 +85,7 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_json()
 
             cart = Cart(**data)
-            point = Point(
-                tags={
-                    "id": data["id"],
-                },
-                fields={
-                    "latitude": cart.latitude,
-                    "longitude": cart.longitude,
-                    "status": cart.status,
-                    "battery": cart.battery,
-                    "at_home": cart.at_home,
-                },
-            )
-            ts_database.insert(point)
+            ts_database.insert(data["id"], cart)
 
             await websocket_manager.broadcast(data)
     except WebSocketDisconnect:

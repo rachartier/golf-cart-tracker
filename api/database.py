@@ -2,10 +2,9 @@
 
 from datetime import datetime, timezone
 
+from model.cart import Cart
 from tinyflux import Point, TagQuery, TimeQuery, TinyFlux
 from tinyflux.queries import Query
-
-from model.cart import Cart
 
 
 class TimeSeriesDB:
@@ -83,6 +82,7 @@ class TimeSeriesDB:
         """
 
         point = Point(
+            time=datetime.now().astimezone(timezone.utc),
             tags={
                 "id": car_id,
             },
@@ -102,3 +102,12 @@ class TimeSeriesDB:
             int: The number of data points removed.
         """
         return self._database.remove(query)
+
+    def remove_all(self):
+        """
+        Remove all data points from the database.
+
+        Returns:
+            int: The number of data points removed.
+        """
+        return self._database.remove_all()

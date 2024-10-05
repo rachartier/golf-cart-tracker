@@ -5,5 +5,5 @@ class Cart(BaseModel):
     latitude: float
     longitude: float
     status: int
-    battery: int
+    battery: float
     at_home: int = 0
