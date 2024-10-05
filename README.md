@@ -109,6 +109,15 @@ Retrieve today's data for all golf carts.
 
 Delete all records of a specific golf cart.
 
+#### Response
+
+```json
+{
+  "message": "cart deleted",
+  "deleted_points": 10
+}
+```
+
 ### Delete all carts information
 
 **DELETE** `/carts`
@@ -119,12 +128,11 @@ Delete all records of all golf carts.
 
 ```json
 {
-  "message": "cart deleted",
-  "deleted_points": 10
+  "message": "all carts deleted",
 }
 ```
 
-### Real-Time Updates
+### Real-Time Updates (avoid using)
 
 **WebSocket** `/ws`
 
