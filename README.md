@@ -74,7 +74,7 @@ Retrieve today's data for all golf carts.
 
 #### Query Parameters
 
-- `count` (optional): Number of records to retrieve per cart. Default is 10.
+- `count_by_cart` (optional): Number of records to retrieve per cart. Default is 10.
 
 #### Response
 
@@ -108,6 +108,12 @@ Retrieve today's data for all golf carts.
 **DELETE** `/carts/{cart_id}`
 
 Delete all records of a specific golf cart.
+
+### Delete all carts information
+
+**DELETE** `/carts`
+
+Delete all records of all golf carts.
 
 #### Response
 
