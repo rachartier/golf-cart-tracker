@@ -21,8 +21,8 @@ class Config(BaseModel):
 
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
-if "carts_color_map" not in st.session_state:
-    st.session_state["carts_color_map"] = {}
+if "cart_color_map" not in st.session_state:
+    st.session_state["cart_color_map"] = {}
 
 if "carts_data" not in st.session_state:
     st.session_state["carts_data"] = {}
@@ -86,26 +86,26 @@ def main():
     all_carts_data = json.loads(response.text)
 
     # Initialize the map
-    map = folium.Map(
+    folium_map = folium.Map(
         # tiles="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
         # attr='&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     )
-    feature_group = folium.FeatureGroup(name="Carts")
+    carts_feature_group = folium.FeatureGroup(name="Carts")
     marker_colors = get_marker_colors()
-    carts_color_map = st.session_state["carts_color_map"]
+    cart_color_map = st.session_state["cart_color_map"]
 
     color_index = 0
-    carts_color_map_changed = False
+    cart_color_map_changed = False
     sorted_carts = dict(sorted(all_carts_data.items(), key=lambda item: item[0].lower()))
-    for cart_id, carts_info_list in sorted_carts.items():
-        if cart_id not in carts_color_map:
-            carts_color_map[cart_id] = marker_colors[color_index % len(marker_colors)]
-            carts_color_map_changed = True
-            print(f"Assigning color {carts_color_map[cart_id]} to cart {cart_id}")
+    for cart_id, cart_info_list in sorted_carts.items():
+        if cart_id not in cart_color_map:
+            cart_color_map[cart_id] = marker_colors[color_index % len(marker_colors)]
+            cart_color_map_changed = True
+            print(f"Assigning color {cart_color_map[cart_id]} to cart {cart_id}")
         color_index += 1
 
-    if carts_color_map_changed:
-        st.session_state["carts_color_map"] = carts_color_map
+    if cart_color_map_changed:
+        st.session_state["cart_color_map"] = cart_color_map
 
     st.markdown(
         """
@@ -198,21 +198,21 @@ def main():
         unsafe_allow_html=True,
     )
 
-    for cart_id, carts_info_list in sorted_carts.items():
-        for cart_info in carts_info_list:
+    for cart_id, cart_info_list in sorted_carts.items():
+        for cart_info in cart_info_list:
             latitude = cart_info["latitude"]
             longitude = cart_info["longitude"]
             status = cart_info["status"]
             battery = cart_info["battery"]
 
         # Get the latest position of the car
-        latest_carts_info = carts_info_list[0]
-        latest_latitude = latest_carts_info["latitude"]
-        latest_longitude = latest_carts_info["longitude"]
+        latest_cart_info = cart_info_list[0]
+        latest_latitude = latest_cart_info["latitude"]
+        latest_longitude = latest_cart_info["longitude"]
 
-        st.session_state["carts_data"][cart_id] = latest_carts_info
+        st.session_state["carts_data"][cart_id] = latest_cart_info
 
-        feature_group.add_child(
+        carts_feature_group.add_child(
             folium.Marker(
                 location=[latest_latitude, latest_longitude],
                 popup=folium.Popup(
@@ -220,7 +220,7 @@ def main():
                     lazy=True,
                 ),
                 icon=folium.Icon(
-                    color=carts_color_map[cart_id],
+                    color=cart_color_map[cart_id],
                     icon="car",
                     prefix="fa",
                 ),
@@ -228,14 +228,13 @@ def main():
         )
 
         # Draw the path of the car
-        path_coordinates = [[car["latitude"], car["longitude"]] for car in carts_info_list]
+        path_coordinates = [[car["latitude"], car["longitude"]] for car in cart_info_list]
         path_line = folium.PolyLine(
             locations=path_coordinates,
-            color=carts_color_map[cart_id],
+            color=cart_color_map[cart_id],
         )
 
-        feature_group.add_child(path_line)
-        color_index += 1
+        carts_feature_group.add_child(path_line)
         color_index += 1
 
     with st.sidebar:
@@ -246,7 +245,7 @@ def main():
             st.session_state["app_refresh_secs"] = st.slider("App refresh time", 1, 60, 5, 1)
 
         st.subheader("Carts")
-        for cart_id, color in carts_color_map.items():
+        for cart_id, color in cart_color_map.items():
             cart_info = st.session_state["carts_data"][cart_id]
             battery_col, exp = st.columns([0.1, 0.9])
 
@@ -260,12 +259,12 @@ def main():
                         unsafe_allow_html=True,
                     )
                 else:
-                    if battery < 10:
+                    if battery < 20:
                         st.markdown(
                             '<div class="low-battery-circle"></div>',
                             unsafe_allow_html=True,
                         )
-                    elif battery < 30:
+                    elif battery < 40:
                         st.markdown(
                             '<div class="medium-battery-circle"></div>',
                             unsafe_allow_html=True,
@@ -323,19 +322,19 @@ def main():
                     "fillColor": "red",
                     "color": "red",
                 },
-            ).add_to(map)
+            ).add_to(folium_map)
 
             # Save the geojson data in a file
             with open("forbidden.geojson", "w") as f:
                 f.write(string_data)
 
-            folium.LayerControl().add_to(map)
+            folium.LayerControl().add_to(folium_map)
 
     st_folium(
-        map,
+        folium_map,
         center=(45.75336519902591, 3.0314909254483497),
         zoom=20,
-        feature_group_to_add=feature_group,
+        feature_group_to_add=carts_feature_group,
         width=st.session_state["viewport_width"],
         height=2500,
     )
