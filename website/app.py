@@ -1,7 +1,7 @@
 # pyright: basic
 
-
 import json
+import os
 import time
 from io import StringIO
 
@@ -16,16 +16,16 @@ from streamlit_js_eval import streamlit_js_eval
 
 class Config(BaseModel):
     host: str = "http://localhost"
-    port: int = 8000
+    port: int = 8001
 
 
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
-if "car_color_map" not in st.session_state:
-    st.session_state["car_color_map"] = {}
+if "carts_color_map" not in st.session_state:
+    st.session_state["carts_color_map"] = {}
 
-if "cars_data" not in st.session_state:
-    st.session_state["cars_data"] = {}
+if "carts_data" not in st.session_state:
+    st.session_state["carts_data"] = {}
 
 if "forbidden_geojson" not in st.session_state:
     st.session_state["forbidden_geojson"] = None
@@ -42,9 +42,13 @@ st.session_state["viewport_width"] = streamlit_js_eval(js_expressions="window.in
 
 @st.cache_data()
 def get_config():
-    # lit le fichier de configuration en json
-    with open("config.json", "r") as f:
-        return Config(**json.load(f))
+    api_url = os.getenv("API_URL", "http://localhost")
+    api_port = int(os.getenv("API_PORT", "8000"))
+
+    return Config(
+        host=api_url,
+        port=api_port,
+    )
 
 
 @st.cache_data()
@@ -74,26 +78,34 @@ def forge_api_url():
 
 def main():
     # Fetch car data from the server
-    response = requests.get(f"{forge_api_url()}/carts/today?count_by_car=100")
-    all_cars_data = json.loads(response.text)
+    trailing_length = 100
+    if "slider_trails_length" in st.session_state:
+        trailing_length = st.session_state["slider_trails_length"]
+
+    response = requests.get(f"{forge_api_url()}/carts/today?count_by_car={trailing_length}")
+    all_carts_data = json.loads(response.text)
 
     # Initialize the map
     map = folium.Map(
         # tiles="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
         # attr='&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     )
-    feature_group = folium.FeatureGroup(name="Cars")
+    feature_group = folium.FeatureGroup(name="Carts")
     marker_colors = get_marker_colors()
-    car_color_map = st.session_state["car_color_map"]
+    carts_color_map = st.session_state["carts_color_map"]
 
     color_index = 0
-    for car_id, car_info_list in all_cars_data.items():
-        if car_id not in car_color_map:
-            car_color_map[car_id] = marker_colors[color_index % len(marker_colors)]
-            print(f"Assigning color {car_color_map[car_id]} to car {car_id}")
+    carts_color_map_changed = False
+    sorted_carts = dict(sorted(all_carts_data.items(), key=lambda item: item[0].lower()))
+    for cart_id, carts_info_list in sorted_carts.items():
+        if cart_id not in carts_color_map:
+            carts_color_map[cart_id] = marker_colors[color_index % len(marker_colors)]
+            carts_color_map_changed = True
+            print(f"Assigning color {carts_color_map[cart_id]} to cart {cart_id}")
         color_index += 1
 
-    st.session_state["car_color_map"] = car_color_map
+    if carts_color_map_changed:
+        st.session_state["carts_color_map"] = carts_color_map
 
     st.markdown(
         """
@@ -121,34 +133,94 @@ def main():
             [data-testid="stSidebarCollapseButton"] {
                 display: none;
             }
+
+
+         .low-battery-circle {
+                background-color: #e78284;
+                border-radius: 50%;
+                width: 1.25em;
+                height: 1.25em;
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 1em;
+            }
+
+            .medium-battery-circle {
+                background-color: #ef9f76;
+                border-radius: 50%;
+                width: 1.25em;
+                height: 1.25em;
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 1em;
+            }
+
+            .good-battery-circle {
+                background-color: #a6d189;
+                border-radius: 50%;
+                width: 1.25em;
+                height: 1.25em;
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 1em;
+            }
+
+            .offline-circle {
+                background-color: #737994;
+                border-radius: 50%;
+                width: 1.25em;
+                height: 1.25em;
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 1em;
+            }
+
+            .at-home-icon {
+                background-color: #a6d189;
+                border-radius: 50%;
+                width: 1.25em;
+                height: 1.25em;
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 1em;
+            }
         </style>""",
         unsafe_allow_html=True,
     )
 
-    for car_id, car_info_list in all_cars_data.items():
-        for car_info in car_info_list:
-            latitude = car_info["latitude"]
-            longitude = car_info["longitude"]
-            status = car_info["status"]
-            battery = car_info["battery"]
+    for cart_id, carts_info_list in sorted_carts.items():
+        for cart_info in carts_info_list:
+            latitude = cart_info["latitude"]
+            longitude = cart_info["longitude"]
+            status = cart_info["status"]
+            battery = cart_info["battery"]
 
         # Get the latest position of the car
-        latest_car_info = car_info_list[0]
-        latest_latitude = latest_car_info["latitude"]
-        latest_longitude = latest_car_info["longitude"]
+        latest_carts_info = carts_info_list[0]
+        latest_latitude = latest_carts_info["latitude"]
+        latest_longitude = latest_carts_info["longitude"]
 
-        st.session_state["cars_data"][car_id] = latest_car_info
+        st.session_state["carts_data"][cart_id] = latest_carts_info
 
-        # Add a marker for the car
         feature_group.add_child(
             folium.Marker(
                 location=[latest_latitude, latest_longitude],
                 popup=folium.Popup(
-                    f"<p><bold>{car_id}</bold>\nSTAT: {status}\n\nBAT: {battery}%</p>",
+                    f"<p><bold>{cart_id}</bold>\nSTAT: {status}\n\nBAT: {round(battery, 2)}%</p>",
                     lazy=True,
                 ),
                 icon=folium.Icon(
-                    color=car_color_map[car_id],
+                    color=carts_color_map[cart_id],
                     icon="car",
                     prefix="fa",
                 ),
@@ -156,10 +228,10 @@ def main():
         )
 
         # Draw the path of the car
-        path_coordinates = [[car["latitude"], car["longitude"]] for car in car_info_list]
+        path_coordinates = [[car["latitude"], car["longitude"]] for car in carts_info_list]
         path_line = folium.PolyLine(
             locations=path_coordinates,
-            color=car_color_map[car_id],
+            color=carts_color_map[cart_id],
         )
 
         feature_group.add_child(path_line)
@@ -167,34 +239,65 @@ def main():
         color_index += 1
 
     with st.sidebar:
-        st.title("Cars tracking")
-        st.subheader("Cars")
-        for car_id, color in car_color_map.items():
-            car_info = st.session_state["cars_data"][car_id]
-            car_battery_icon = "🔋" if car_info["battery"] >= 20 else "🪫"
+        st.title("Carts tracking")
 
-            with st.expander(f"**Car {car_id}** ({color})  {car_battery_icon} {car_info['battery']}%"):
-                st.code(f"""
-Lat.: {car_info['latitude']}
-Lon.: {car_info['longitude']}
-Status: {car_info['status']}
-At home: {car_info['at_home']}
-                """)
-                with stylable_container(
-                    key=f"hint_color_{car_id}",
-                    css_styles=f"""
-                        {{
-                            background-color: {color};
-                            color: {color};
-                            width: 100%;
-                            height: 5px;
-                            border-radius: 0.8em;
-                            padding: 0.2em;
-                            margin: 0em;
-                        }}
-                        """,
-                ):
-                    pass
+        st.session_state["slider_trails_length"] = st.slider("Carts trails length", 10, 500, 100, 10)
+
+        for cart_id, color in carts_color_map.items():
+            cart_info = st.session_state["carts_data"][cart_id]
+            battery_col, exp = st.columns([0.1, 0.9])
+
+            with battery_col:
+                battery = cart_info["battery"]
+                battery = round(battery, 2)
+
+                if cart_info["status"] == 0:
+                    st.markdown(
+                        '<div class="offline-circle"></div>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    if battery < 20:
+                        st.markdown(
+                            '<div class="low-battery-circle"></div>',
+                            unsafe_allow_html=True,
+                        )
+                    elif battery < 30:
+                        st.markdown(
+                            '<div class="medium-battery-circle"></div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(
+                            '<div class="good-battery-circle"></div>',
+                            unsafe_allow_html=True,
+                        )
+
+            with exp:
+                # carts_battery_icon = "🔋" if carts_info["battery"] >= 20 else "🪫"
+                with st.expander(f"{cart_id} ({color})", icon=":material/directions_car:"):
+                    st.code(f"""
+    Lat.: {round(cart_info['latitude'], 6)}
+    Lon.: {round(cart_info['longitude'], 6)}
+    Status: {cart_info['status']}
+    Battery: {round(cart_info['battery'], 2)}%
+    At home: {cart_info['at_home']}
+                    """)
+                    with stylable_container(
+                        key=f"hint_color_{cart_id}",
+                        css_styles=f"""
+                            {{
+                                background-color: {color};
+                                color: {color};
+                                width: 100%;
+                                height: 5px;
+                                border-radius: 0.8em;
+                                padding: 0.2em;
+                                margin: 0em;
+                            }}
+                            """,
+                    ):
+                        pass
 
         uploaded_file = st.file_uploader("Choose a file")
         if uploaded_file is not None:
@@ -235,9 +338,16 @@ At home: {car_info['at_home']}
     )
 
     # Refresh the Streamlit app
-    time.sleep(1)
+    time.sleep(5)
     st.rerun()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except requests.exceptions.ConnectionError as e:
+        st.error(f"Connection error: {e}\n\nPlease check the server, and click on the reload button.")
+        button = st.button("Reload")
+
+        if button:
+            st.rerun()
