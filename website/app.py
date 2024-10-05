@@ -82,7 +82,7 @@ def main():
     if "slider_trails_length" in st.session_state:
         trailing_length = st.session_state["slider_trails_length"]
 
-    response = requests.get(f"{forge_api_url()}/carts/today?count_by_car={trailing_length}")
+    response = requests.get(f"{forge_api_url()}/carts/today?count_by_cart={trailing_length}")
     all_carts_data = json.loads(response.text)
 
     # Initialize the map

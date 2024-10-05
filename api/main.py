@@ -46,8 +46,8 @@ async def read_cart(cart_id: str, count: int = 10):
 
 
 @app.get("/carts/today", response_model=dict[str, list[Cart]])
-async def read_cart_today(count_by_car: int = 10):
-    return ts_database.get_carts_today(count_by_car)
+async def read_cart_today(count_by_cart: int = 10):
+    return ts_database.get_carts_today(count_by_cart)
 
 
 @app.delete("/carts/{cart_id}")
