@@ -1,7 +1,7 @@
 folium==0.17.0
 pydantic==2.9.2
 Requests==2.32.3
-streamlit==1.38.0
+streamlit==1.39.0
 streamlit_extras==0.4.7
 streamlit_folium==0.22.1
 streamlit_js_eval==0.1.7

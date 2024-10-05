@@ -83,7 +83,7 @@ def main():
         trailing_length = st.session_state["slider_trails_length"]
 
     response = requests.get(f"{forge_api_url()}/carts/today?count_by_cart={trailing_length}")
-    all_carts_data = json.loads(response.text)
+    all_carts_data = response.json()
 
     # Initialize the map
     folium_map = folium.Map(
@@ -124,18 +124,38 @@ def main():
 
             [data-testid="stHeader"] {
                 padding: 0;
+                height: 0;
+            }
+            [data-testid="stMain"] {
+                padding: 0;
             }
 
-            [data-testid="element-container"] {
-                padding: 0;
+            [data-testid="stMainBlockContainer"]
+                padding: 0 !important;
+            }
+            .block-container {
+                margin-top: 0 !important;
+                padding: 0 !important;
+            }
+
+            .st-emotion-cache-1jicfl2 {
+                margin-top: 0 !important;
+                padding: 0 !important;
             }
 
             [data-testid="stSidebarCollapseButton"] {
                 display: none;
             }
 
+            .st-key-ViewportWidth {
+                display: none;
+            }
 
-         .low-battery-circle {
+            div.stElementContainer:nth-child(6) {
+                position: absolute;
+            }
+
+            .low-battery-circle {
                 background-color: #e78284;
                 border-radius: 50%;
                 width: 1.25em;
@@ -194,6 +214,10 @@ def main():
                 align-items: center;
                 margin-top: 1em;
             }
+
+            [data-testid="ScrollToBottomContainer"] {
+                overflow: hidden;
+            }
         </style>""",
         unsafe_allow_html=True,
     )
@@ -238,13 +262,21 @@ def main():
         color_index += 1
 
     with st.sidebar:
-        st.title("Carts tracking")
+        st.title("Golf Carts Tracker ⛳")
 
-        with st.expander("Settings", expanded=True):
+        with st.expander("Settings", expanded=False):
             st.session_state["slider_trails_length"] = st.slider("Carts trails length", 10, 500, 100, 10)
             st.session_state["app_refresh_secs"] = st.slider("App refresh time", 1, 60, 5, 1)
 
-        st.subheader("Carts")
+            button_erease_all = st.button("Remove all carts data from database", icon=":material/delete:")
+            if button_erease_all:
+                response = requests.delete(f"{forge_api_url()}/carts")
+                st.toast(response.json()["message"])
+                cart_color_map = {}
+                st.session_state["cart_color_map"] = cart_color_map
+                st.rerun()
+
+        st.subheader(f"Carts ({len(cart_color_map)})")
         for cart_id, color in cart_color_map.items():
             cart_info = st.session_state["carts_data"][cart_id]
             battery_col, exp = st.columns([0.1, 0.9])
@@ -332,11 +364,11 @@ def main():
 
     st_folium(
         folium_map,
+        use_container_width=True,
         center=(45.75336519902591, 3.0314909254483497),
         zoom=20,
         feature_group_to_add=carts_feature_group,
-        width=st.session_state["viewport_width"],
-        height=2500,
+        height=2000,
     )
 
     time.sleep(st.session_state["app_refresh_secs"])
