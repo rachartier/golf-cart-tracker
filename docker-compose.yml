@@ -1,8 +1,7 @@
 services:
-  app:
-    build:
-      context: ./website
-    container_name: golf-cart-tracker-app
+  website:
+    image: rachartier/golf-cart-tracker-website
+    container_name: golf-cart-tracker-website
     restart: always
     ports:
       - "80:80"
@@ -17,8 +16,7 @@ services:
       - golf-network
 
   api:
-    build:
-      context: ./api
+    image: rachartier/golf-cart-tracker-api
     container_name: golf-cart-tracker-api
     restart: always
     ports:
