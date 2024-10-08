@@ -5,7 +5,10 @@ import time
 import requests
 import websocket
 
-ws = websocket.create_connection("ws://localhost:8000/ws")
+# host = "localhost:8000"
+host = "192.168.1.97:8000"
+
+ws = websocket.create_connection(f"ws://{host}/ws")
 
 d_lat = 45.75336519902591
 d_lon = 3.0314909254483497
@@ -35,7 +38,7 @@ def send_data(car_id):
 
         print("Sending data: ", data)
 
-        requests.put(f"http://localhost:8000/carts/{car_id}", json=data)
+        requests.put(f"http://{host}/carts/{car_id}", json=data)
 
         if not online:
             time.sleep(10)
