@@ -5,6 +5,7 @@ import asyncio
 
 from database import TimeSeriesDB
 from fastapi import FastAPI, WebSocketDisconnect
+from fastapi.responses import FileResponse
 from fastapi.websockets import WebSocket
 from model.cart import Cart
 from tinyflux import TagQuery
@@ -72,6 +73,11 @@ async def delete_all_carts():
     return {
         "message": "all carts deleted",
     }
+
+
+@app.get("/database/download")
+async def download_database():
+    return FileResponse(path="./database.db", filename="database.db", media_type="application/text")
 
 
 websocket_manager = WebsocketClientManager()

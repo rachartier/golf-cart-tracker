@@ -132,6 +132,13 @@ Delete all records of all golf carts.
 }
 ```
 
+### Download database
+
+**GET** `/database/download`
+
+Download the database file.
+
+
 ### Real-Time Updates (avoid using)
 
 **WebSocket** `/ws`
