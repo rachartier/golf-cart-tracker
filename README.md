@@ -151,6 +151,39 @@ Receive real-time updates of golf cart data.
 }
 ```
 
+
+# Install on a Raspberry
+
+## Update the system
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade
+```
+
+## Install Docker
+
+```bash
+curl -sSL https://get.docker.com | sh
+```
+
+## Install Docker Compose
+
+```bash
+sudo apt-get install docker-compose-plugin
+```
+
+## Update containers
+Next, copy `app-updater.sh` to the Raspberry and run it.
+
+```bash
+chmod +x app-updater.sh
+./app-updater.sh
+```
+
+It will update/install the containers and restart them.
+
+
 ## License
 
 This project is licensed under the MIT License.
